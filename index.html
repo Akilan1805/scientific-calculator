@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akilan's Scientific Calc</title>
+
+    <style>
+        /* --- PRO DYNAMIC BACKGROUND --- */
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: radial-gradient(circle at center, #1e3c72, #2a5298, #000000);
+            background-size: 200% 200%;
+            animation: moveGradient 10s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: white;
+            overflow: hidden;
+        }
+
+        @keyframes moveGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- CALCULATOR BODY --- */
+        .container {
+            background: linear-gradient(145deg, #2c2c2c, #1a1a1a);
+            padding: 30px;
+            width: 360px;
+            border-radius: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 
+                        inset 0 2px 5px rgba(255,255,255,0.1);
+            display: none;
+            position: relative;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateY(50px) rotateX(15deg);
+            opacity: 0;
+        }
+
+        .container.active {
+            display: block;
+            transform: translateY(0) rotateX(0deg);
+            opacity: 1;
+        }
+
+        .brand {
+            font-size: 0.7rem;
+            text-align: center;
+            letter-spacing: 4px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            animation: glowText 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glowText {
+            from { text-shadow: 0 0 2px white; }
+            to { text-shadow: 0 0 10px #00ffcc; color: white; }
+        }
+
+        h2 {
+            text-align: center;
+            font-weight: 300;
+            font-size: 1.1rem;
+            color: #fff;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+
+        /* --- LCD SCREEN LOOK --- */
+        #display, #string1, #string2, #gameInput {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 20px;
+            font-size: 24px;
+            font-family: 'Courier New', Courier, monospace;
+            margin-bottom: 20px;
+            background: #0d1b1a; 
+            border: 4px solid #333;
+            border-radius: 10px;
+            color: #00ffcc;
+            text-align: right;
+            outline: none;
+            box-shadow: inset 0 5px 15px rgba(0,0,0,0.9), 0 0 10px rgba(0,255,204,0.2);
+        }
+
+        /* --- TACTILE KEYS --- */
+        button {
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(145deg, #3d3d3d, #252525);
+            color: #ddd;
+            box-shadow: 4px 4px 8px #111, -2px -2px 6px #444;
+            transition: all 0.1s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button:hover {
+            color: white;
+            background: linear-gradient(145deg, #444, #2a2a2a);
+        }
+
+        button:active {
+            box-shadow: inset 2px 2px 5px #111, inset -1px -1px 3px #444;
+            transform: scale(0.96);
+        }
+
+        /* --- COLOR CODING --- */
+        .buttons button:nth-child(4n), .buttons button:first-child {
+            background: linear-gradient(145deg, #4d3300, #2b1d00);
+            color: #ff9800;
+        }
+
+        .sci-buttons button {
+            background: linear-gradient(145deg, #2a143d, #1a0c26);
+            color: #bb86fc;
+        }
+
+        button[onclick="calculate()"], button[onclick="checkAnswer()"] {
+            background: linear-gradient(145deg, #1b5e20, #0d320f) !important;
+            color: #81c784;
+        }
+
+        .buttons, .sci-buttons, .game-controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        /* --- NAV BUTTONS --- */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .nav-btn, .back-btn {
+            width: 100%;
+            height: 50px;
+            margin-top: 10px;
+            text-transform: uppercase;
+            border-radius: 50px;
+            font-size: 12px;
+        }
+
+        .btn-orange { background: linear-gradient(145deg, #ff5722, #bf360c); color: white; }
+        .btn-blue { background: linear-gradient(145deg, #0288d1, #01579b); color: white; }
+        .btn-purple { background: linear-gradient(145deg, #6a1b9a, #4a148c); color: white; }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            text-align: center;
+            font-family: monospace;
+            animation: slideUp 0.4s ease;
+        }
+
+        #gameQuestion {
+            font-size: 1.4rem;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #00ffcc;
+            text-shadow: 0 0 5px #00ffcc;
+        }
+
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } }
+    </style>
+</head>
+
+<body>
+
+    <div class="container active" id="calculatorPage">
+        <div class="brand">Advanced Series // Akilan's</div>
+        <h2>Scientific Calculator</h2>
+
+        <input type="text" id="display" placeholder="0" readonly>
+
+        <div class="buttons">
+            <button onclick="clearDisplay()">AC</button>
+            <button onclick="append('(')">(</button>
+            <button onclick="append(')')">)</button>
+            <button onclick="append('/')">÷</button>
+            <button onclick="append('7')">7</button>
+            <button onclick="append('8')">8</button>
+            <button onclick="append('9')">9</button>
+            <button onclick="append('*')">×</button>
+            <button onclick="append('4')">4</button>
+            <button onclick="append('5')">5</button>
+            <button onclick="append('6')">6</button>
+            <button onclick="append('-')">−</button>
+            <button onclick="append('1')">1</button>
+            <button onclick="append('2')">2</button>
+            <button onclick="append('3')">3</button>
+            <button onclick="append('+')">+</button>
+            <button onclick="append('0')">0</button>
+            <button onclick="append('.')">.</button>
+            <button style="grid-column: span 2;" onclick="calculate()">ENTER</button>
+        </div>
+
+        <div class="sci-buttons">
+            <button onclick="sin()">sin</button>
+            <button onclick="cos()">cos</button>
+            <button onclick="tan()">tan</button>
+            <button onclick="sqrt()">√x</button>
+        </div>
+
+        <div class="nav-grid">
+            <button class="nav-btn btn-orange" onclick="goToStringPage()">String Lab →</button>
+            <button class="nav-btn btn-purple" onclick="goToGamePage()">Game Mode 🎮</button>
+        </div>
+    </div>
+
+    <div class="container" id="stringPage">
+        <div class="brand">String Module // Akilan's</div>
+        <h2>String Operations</h2>
+        <input type="text" id="string1" placeholder="Input A...">
+        <input type="text" id="string2" placeholder="Input B...">
+        <div class="string-buttons" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <button onclick="reverseString()">Reverse</button>
+            <button onclick="countDigits()">Digit Sum</button>
+            <button onclick="checkPalindrome()">Palindrome</button>
+            <button onclick="concatStrings()">Join</button>
+        </div>
+        <div class="result" id="stringResult">Ready...</div>
+        <button class="back-btn btn-blue" onclick="goToCalculator()">← Back</button>
+    </div>
+
+    <div class="container" id="gamePage">
+        <div class="brand">Logic Module // Akilan's</div>
+        <h2 id="levelDisplay">Level: Easy</h2>
+        <div id="gameQuestion">Question?</div>
+        <input type="number" id="gameInput" placeholder="Answer...">
+        <button style="width:100%; height:50px;" onclick="checkAnswer()">SUBMIT ANSWER</button>
+        <div class="result" id="gameResult">Good luck!</div>
+        <button class="back-btn btn-blue" onclick="goToCalculator()">← Back</button>
+    </div>
+
+    <script>
+        let currentLevel = 1; 
+        let currentAnswer = 0;
+
+        /* NAVIGATION */
+        function hideAll() {
+            document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+        }
+
+        function goToStringPage() { hideAll(); setTimeout(() => document.getElementById("stringPage").classList.add("active"), 300); }
+        function goToCalculator() { hideAll(); setTimeout(() => document.getElementById("calculatorPage").classList.add("active"), 300); }
+        function goToGamePage() { 
+            hideAll(); 
+            setTimeout(() => {
+                document.getElementById("gamePage").classList.add("active");
+                generateQuestion();
+            }, 300); 
+        }
+
+        /* CALC LOGIC */
+        let display = document.getElementById("display");
+        function append(val) { display.value += val; }
+        function clearDisplay() { display.value = ""; }
+        function calculate() {
+            try { display.value = eval(display.value.replace('×', '*').replace('÷', '/')); }
+            catch { display.value = "Error"; }
+        }
+        function toRad(deg) { return deg * Math.PI / 180; }
+        function sin() { display.value = Math.sin(toRad(eval(display.value))).toFixed(4); }
+        function cos() { display.value = Math.cos(toRad(eval(display.value))).toFixed(4); }
+        function tan() { display.value = Math.tan(toRad(eval(display.value))).toFixed(4); }
+        function sqrt() { display.value = Math.sqrt(eval(display.value)).toFixed(4); }
+
+        /* STRING LOGIC */
+        function reverseString() { document.getElementById("stringResult").innerText = "REV: " + document.getElementById("string1").value.split("").reverse().join(""); }
+        function countDigits() { document.getElementById("stringResult").innerText = "DIGITS: " + document.getElementById("string1").value.replace(/[^0-9]/g, "").length; }
+        function checkPalindrome() {
+            let s = document.getElementById("string1").value.toLowerCase().replace(/\s/g,"");
+            document.getElementById("stringResult").innerText = s === s.split("").reverse().join("") ? "PALINDROME: YES" : "PALINDROME: NO";
+        }
+        function concatStrings() { document.getElementById("stringResult").innerText = document.getElementById("string1").value + document.getElementById("string2").value; }
+
+        /* 🎮 GAME LOGIC */
+        function generateQuestion() {
+            let n1, n2, op;
+            if(currentLevel < 3) {
+                document.getElementById("levelDisplay").innerText = "Level: Easy";
+                n1 = Math.floor(Math.random() * 10);
+                n2 = Math.floor(Math.random() * 10);
+                op = '+';
+                currentAnswer = n1 + n2;
+            } else if (currentLevel < 6) {
+                document.getElementById("levelDisplay").innerText = "Level: Medium";
+                n1 = Math.floor(Math.random() * 50);
+                n2 = Math.floor(Math.random() * 20);
+                op = '-';
+                currentAnswer = n1 - n2;
+            } else {
+                document.getElementById("levelDisplay").innerText = "Level: Hard";
+                n1 = Math.floor(Math.random() * 12);
+                n2 = Math.floor(Math.random() * 12);
+                op = '*';
+                currentAnswer = n1 * n2;
+            }
+            document.getElementById("gameQuestion").innerText = `${n1} ${op} ${n2} = ?`;
+            document.getElementById("gameInput").value = "";
+        }
+
+        function checkAnswer() {
+            let userAns = parseInt(document.getElementById("gameInput").value);
+            let res = document.getElementById("gameResult");
+            if(userAns === currentAnswer) {
+                res.innerText = "CORRECT! Level Up! ✔";
+                res.style.color = "#00ffcc";
+                currentLevel++;
+                setTimeout(generateQuestion, 1000);
+            } else {
+                res.innerText = "WRONG! Try Again ❌";
+                res.style.color = "#ff5722";
+            }
+        }
+    </script>
+</body>
+</html>
